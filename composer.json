@@ -1,0 +1,23 @@
+{
+    "require": {
+        "longman/telegram-bot": "*",
+        "league/oauth2-client": "^2.0",
+        "nesbot/carbon": "^2.0.0",
+        "monolog/monolog": "^1.24",
+        "ext-json": "*",
+        "ext-curl": "*"
+    },
+    "authors": [
+        {
+            "name": "Vencislav Atanasov",
+            "email": "user890104@users.noreply.github.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "User890104\\": "lib/User890104"
+        }
+    },
+    "require-dev": {
+    }
+}
