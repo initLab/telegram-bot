@@ -167,7 +167,7 @@ class StatusCommand extends UserCommand
 			'Atmospheric pressure: ' . static::formatNum($data['pressure'], 1) . ' hPa';
 	}
 	
-	private static function formatThingspeakWeather($url, $label) {
+	private static function formatMqttWeather($url) {
 		try {
 			$data = static::getJson($url);
 		}
@@ -175,14 +175,14 @@ class StatusCommand extends UserCommand
 			return 'Weather not available: ' . $e->getMessage();
 		}
 		
-		if (count($data['feeds']) === 0) {
+		if (count($data) < 6) {
 			return 'Weather status error: no data';
 		}
 		
 		return
-			$label . ' ' .
-			explode(':', $data['channel']['field1'])[0] . ': ' . static::formatNum($data['feeds'][0]['field1'], 1) . '°С / ' .
-			explode(':', $data['channel']['field2'])[0] . ': ' . static::formatNum($data['feeds'][0]['field2'], 1) . '%';
+			'Outside: Temperature: ' . static::formatNum($data['sensor-outside-espurna/temperature'], 1) . '°С / Humidity: ' . static::formatNum($data['sensor-outside-espurna/humidity'], 1) . '%' . PHP_EOL .
+			'Lecture room: Temperature: ' . static::formatNum($data['sensor-lecture-room-espurna/temperature'], 1) . '°С / Humidity: ' . static::formatNum($data['sensor-lecture-room-espurna/humidity'], 1) . '%' . PHP_EOL .
+			'Ruby room: Temperature: ' . static::formatNum($data['sensor-ruby-room-espurna/temperature'], 1) . '°С / Humidity: ' . static::formatNum($data['sensor-ruby-room-espurna/humidity'], 1) . '%' . PHP_EOL;
 	}
 	
 	private static function isMetadataValid($key, array $dict) {
@@ -279,9 +279,7 @@ class StatusCommand extends UserCommand
 			static::formatDoorStatus('https://fauna.initlab.org/api/door/status.json') . PHP_EOL .
 			static::formatLightsStatus('https://fauna.initlab.org/api/lights/status.json') . PHP_EOL .
 			//static::formatWeather('https://spitfire.initlab.org/weather.json') . PHP_EOL .
-			//static::formatThingspeakWeather('https://api.thingspeak.com/channels/222701/feeds.json?results=1', 'Lecture room') . PHP_EOL .
-			//static::formatThingspeakWeather('https://api.thingspeak.com/channels/222702/feeds.json?results=1', 'Ruby room') . PHP_EOL .
-			//static::formatThingspeakWeather('https://api.thingspeak.com/channels/132452/feeds.json?results=1', 'Outside') . PHP_EOL .
+			static::formatMqttWeather('http://185.117.82.20:9999/status') . PHP_EOL .
 			static::formatMusic('http://spitfire.initlab.org:8989/status') . PHP_EOL .
 			static::formatUsers('https://fauna.initlab.org/api/users/present.json');
 	}
