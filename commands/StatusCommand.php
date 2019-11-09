@@ -180,9 +180,9 @@ class StatusCommand extends UserCommand
 		}
 		
 		return
-			'Outside: Temperature: ' . static::formatNum($data['sensor-outside-espurna/temperature'], 1) . '°С / Humidity: ' . static::formatNum($data['sensor-outside-espurna/humidity'], 1) . '%' . PHP_EOL .
-			'Lecture room: Temperature: ' . static::formatNum($data['sensor-lecture-room-espurna/temperature'], 1) . '°С / Humidity: ' . static::formatNum($data['sensor-lecture-room-espurna/humidity'], 1) . '%' . PHP_EOL .
-			'Ruby room: Temperature: ' . static::formatNum($data['sensor-ruby-room-espurna/temperature'], 1) . '°С / Humidity: ' . static::formatNum($data['sensor-ruby-room-espurna/humidity'], 1) . '%' . PHP_EOL;
+			'Outside: Temperature: ' . static::formatNum($data['sensor-outside-espurna/temperature']['value'], 1) . '°С / Humidity: ' . static::formatNum($data['sensor-outside-espurna/humidity']['value'], 1) . '%' . PHP_EOL .
+			'Lecture room: Temperature: ' . static::formatNum($data['sensor-lecture-room-espurna/temperature']['value'], 1) . '°С / Humidity: ' . static::formatNum($data['sensor-lecture-room-espurna/humidity']['value'], 1) . '%' . PHP_EOL .
+			'Ruby room: Temperature: ' . static::formatNum($data['sensor-ruby-room-espurna/temperature']['value'], 1) . '°С / Humidity: ' . static::formatNum($data['sensor-ruby-room-espurna/humidity']['value'], 1) . '%' . PHP_EOL;
 	}
 	
 	private static function isMetadataValid($key, array $dict) {
