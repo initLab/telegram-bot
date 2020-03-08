@@ -25,6 +25,14 @@ class StatusCommand extends UserCommand
 	
 	const GUEST_NAME = 'Mystery Labber';
 	
+	const UNITS = [
+		'temperature' => '°C',
+		'humidity' => '%',
+		'pressure' => 'hPa',
+		'power' => 'W',
+		'energy' => 'kWh',
+	];
+
 	private static function formatNum($num, $decimals = 0) {
 		return number_format($num, $decimals, '.', '');
 	}
@@ -149,40 +157,47 @@ class StatusCommand extends UserCommand
 		return $result;
 	}
 	
-	private static function formatWeather($url) {
+	private static function formatMqttStatus(array $config) {
 		try {
-			$data = static::getJson($url);
+			$data = static::getJson($config['url']);
 		}
 		catch (Exception $e) {
-			return 'Weather not available: ' . $e->getMessage();
+			return 'MQTT status not available: ' . $e->getMessage();
 		}
 		
-		if ($data['status'] !== 0) {
-			return 'Weather status error (code ' . $data['status'] . ')';
+		$result = [];
+		
+		foreach ($config['sensors'] as $sensor => $sensorData) {
+			$values = [];
+			
+			foreach (static::UNITS as $unit => $unitSymbol) {
+				$key = $sensor . '/' . $unit;
+				
+				if (!array_key_exists($key, $data)) {
+					continue;
+				}
+				
+				$currValue = $data[$key];
+				$label = ucfirst($unit);
+				$delta = max(0, microtime(true) - $currValue['timestamp'] / 1000);
+				
+				$message = $label . ': ' . static::formatNum(floatval($currValue['value']), 1) . $unitSymbol;
+				
+				if ($delta > $config['timeout']) {
+					$message .= ' (' . static::formatNum($delta) . 's ago)';
+				}
+				
+				$values[] = $message;
+			}
+			
+			if (count($values) === 0) {
+				continue;
+			}
+			
+			$result[] = $sensorData['name'] . ': ' . implode(' / ', $values);
 		}
 		
-		return
-			'Temperature: ' . static::formatNum($data['temp_in'], 1) . '°С in / ' . static::formatNum($data['temp_out'], 1) . '°С out' . PHP_EOL .
-			'Humidity: ' . static::formatNum($data['hum_in']) . '% in / ' . static::formatNum($data['hum_out']) . '% out' . PHP_EOL .
-			'Atmospheric pressure: ' . static::formatNum($data['pressure'], 1) . ' hPa';
-	}
-	
-	private static function formatMqttWeather($url) {
-		try {
-			$data = static::getJson($url);
-		}
-		catch (Exception $e) {
-			return 'Weather not available: ' . $e->getMessage();
-		}
-		
-		if (count($data) < 6) {
-			return 'Weather status error: no data';
-		}
-		
-		return
-			'Outside: Temperature: ' . static::formatNum($data['sensor-outside-espurna/temperature']['value'], 1) . '°С / Humidity: ' . static::formatNum($data['sensor-outside-espurna/humidity']['value'], 1) . '%' . PHP_EOL .
-			'Lecture room: Temperature: ' . static::formatNum($data['sensor-lecture-room-espurna/temperature']['value'], 1) . '°С / Humidity: ' . static::formatNum($data['sensor-lecture-room-espurna/humidity']['value'], 1) . '%' . PHP_EOL .
-			'Ruby room: Temperature: ' . static::formatNum($data['sensor-ruby-room-espurna/temperature']['value'], 1) . '°С / Humidity: ' . static::formatNum($data['sensor-ruby-room-espurna/humidity']['value'], 1) . '%' . PHP_EOL;
+		return implode(PHP_EOL, $result);
 	}
 	
 	private static function isMetadataValid($key, array $dict) {
@@ -233,55 +248,13 @@ class StatusCommand extends UserCommand
 			) : '');
 	}
 	
-	private static function formatAc($url) {
-		try {
-			$data = static::getJson($url);
-		}
-		catch (Exception $e) {
-			return 'AC status not available: ' . $e->getMessage();
-		}
-		
-		if (array_key_exists('error', $data)) {
-			return 'AC status error: ' . $data['error'];
-		}
-		
-		$modes = [
-			'Cooling',
-			'Drying',
-			'Auto',
-			'Heating',
-		];
-		
-		$fanSpeeds = [
-			3 => 'High',
-			9 => 'Low',
-			11 => 'Auto',
-		];
-		
-		return 'Air conditioner: ' . ($data['on'] ? (
-			'ON, Mode: ' .
-			(
-				array_key_exists($data['mode'], $modes) ?
-					$modes[$data['mode']] :
-					'Unknown'
-			) .
-			', Temp: ' . $data['temp'] . '°С, Fan: ' .
-			(
-				array_key_exists($data['fan'], $fanSpeeds) ?
-					$fanSpeeds[$data['fan']] :
-					'Unknown'
-			)
-		) : 'OFF');
-	}
-	
-	private static function getStatus() {
+	private static function getStatus(array $config) {
 		return
-			static::formatDoorStatus('https://fauna.initlab.org/api/door/status.json') . PHP_EOL .
-			static::formatLightsStatus('https://fauna.initlab.org/api/lights/status.json') . PHP_EOL .
-			//static::formatWeather('https://spitfire.initlab.org/weather.json') . PHP_EOL .
-			static::formatMqttWeather('http://185.117.82.20:9999/status') . PHP_EOL .
-			static::formatMusic('http://spitfire.initlab.org:8989/status') . PHP_EOL .
-			static::formatUsers('https://fauna.initlab.org/api/users/present.json');
+			static::formatDoorStatus($config['door_url']) . PHP_EOL .
+			static::formatLightsStatus($config['lights_url']) . PHP_EOL .
+			static::formatMqttStatus($config['mqtt']) . PHP_EOL .
+			static::formatMusic($config['music_url']) . PHP_EOL .
+			static::formatUsers($config['users_url']);
 	}
 	
     public function execute()
@@ -293,9 +266,11 @@ class StatusCommand extends UserCommand
 		$message_id = $message->getMessageId();
 		$reply_to_message_id = $chat_id < 0 ? $message_id : null;
 		
+		$config = $this->telegram->getCommandConfig('status');
+		
 		return Request::sendMessage([
 			'chat_id' => $chat_id,
-			'text' => static::getStatus(),
+			'text' => static::getStatus($config),
 			'parse_mode' => 'HTML',
 			'disable_web_page_preview' => true,
 			'reply_to_message_id' => $reply_to_message_id,

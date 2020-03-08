@@ -46,6 +46,14 @@ try {
 		'oauth_client_secret' => FAUNA_OAUTH_CLIENT_SECRET,
 	]);
 
+    $telegram->setCommandConfig('status', [
+		'door_url' => STATUS_DOOR_URL,
+		'lights_url' => STATUS_LIGHTS_URL,
+		'mqtt' => STATUS_MQTT,
+		'music_url' => STATUS_MUSIC_URL,
+		'users_url' => STATUS_USERS_URL,
+	]);
+
     // Requests Limiter (tries to prevent reaching Telegram API limits)
     $telegram->enableLimiter();
 
