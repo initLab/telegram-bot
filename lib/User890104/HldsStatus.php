@@ -56,21 +56,14 @@ class HldsStatus {
 	}
 	
 	public static function getStatus($host, $port = 27015) {
+	    $client = new RconClient($host, '', $port);
+
 		try {
-			$info = static::getJson('https://dev.6bez10.info/hlds/?' . http_build_query([
-				'host' => $host,
-				'port' => $port,
-				'action' => 'info',
-			]));
-			
-			$players = static::getJson('https://dev.6bez10.info/hlds/?' . http_build_query([
-				'host' => $host,
-				'port' => $port,
-				'action' => 'players',
-			]));
+			$info = $client->getInfo();
+			$players = $client->getPlayers();
 		}
 		catch (Exception $e) {
-			return $e->getMessage();
+			return '[' . $host . ':' . $port . '] ' . $e->getMessage();
 		}
 		
 		return
