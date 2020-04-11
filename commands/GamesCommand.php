@@ -18,7 +18,7 @@ use User890104\HldsStatus;
 class GamesCommand extends UserCommand
 {
     protected $name = 'games';
-    protected $description = 'Show Half-Life server status';
+    protected $description = 'Show game servers\' status';
     protected $usage = '/games';
     protected $version = '1.0.0';
     protected $enabled = true;
