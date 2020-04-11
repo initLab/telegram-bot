@@ -46,6 +46,10 @@ try {
 		'oauth_client_secret' => FAUNA_OAUTH_CLIENT_SECRET,
 	]);
 
+    $telegram->setCommandConfig('games', [
+		'servers' => GAMES_SERVERS,
+	]);
+
     $telegram->setCommandConfig('status', [
 		'door_url' => STATUS_DOOR_URL,
 		'lights_url' => STATUS_LIGHTS_URL,

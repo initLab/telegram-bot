@@ -15,11 +15,11 @@ use Longman\TelegramBot\Request;
 
 use User890104\HldsStatus;
 
-class HlCommand extends UserCommand
+class GamesCommand extends UserCommand
 {
-    protected $name = 'hl';
+    protected $name = 'games';
     protected $description = 'Show Half-Life server status';
-    protected $usage = '/hl';
+    protected $usage = '/games';
     protected $version = '1.0.0';
     protected $enabled = true;
 	
@@ -31,10 +31,12 @@ class HlCommand extends UserCommand
         $chat_id = $message->getChat()->getId();
 		$message_id = $message->getMessageId();
 		$reply_to_message_id = $chat_id < 0 ? $message_id : null;
-		
-		return Request::sendMessage([
+
+        $config = $this->telegram->getCommandConfig('games');
+
+        return Request::sendMessage([
 			'chat_id' => $chat_id,
-			'text' => HldsStatus::getStatus('hl.6bez10.info'),
+			'text' => HldsStatus::getStatusMultiple($config['servers']),
 			'reply_to_message_id' => $reply_to_message_id,
 			'parse_mode' => 'HTML',
 		]);

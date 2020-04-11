@@ -16,6 +16,13 @@ define('DB_NAME', 'telegram_bot');
 define('FAUNA_OAUTH_CLIENT_ID', 'example');
 define('FAUNA_OAUTH_CLIENT_SECRET', 'example');
 
+define('GAMES_SERVERS', [[
+    'host' => 'example.com',
+], [
+    'host' => 'example.net',
+    'port' => 12345,
+]]);
+
 define('STATUS_DOOR_URL', 'https://example.com/door/status.json');
 define('STATUS_LIGHTS_URL', 'https://example.com/lights/status.json');
 define('STATUS_MQTT', [

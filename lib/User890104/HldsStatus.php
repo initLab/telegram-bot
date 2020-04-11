@@ -89,4 +89,11 @@ class HldsStatus {
 				return '<strong>' . $player['Name'] . '</strong> (' . $player['Score'] . ' frags)';
 			}, $players))) : '');
 	}
+
+	public static function getStatusMultiple(array $servers)
+    {
+        return implode(PHP_EOL, array_map(function($server) {
+            return static::getStatus($server['host'], $server['port'] ?? 27015);
+        }, $servers));
+    }
 }
