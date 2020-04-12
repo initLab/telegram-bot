@@ -18,8 +18,8 @@ class HldsStatus {
 		}
 
 		return
-            '<pre>' . $hostAndPort . '</pre> <strong>' . $info['Game'] . '</strong> (' . $info['Name'] .
-            ') at map ' . $info['Map'] . ' with ' . $info['Players'] . ' of ' . $info['MaxPlayers'] .
+            '<code>' . $hostAndPort . '</code> | <strong>' . $info['Game'] . '</strong> (' . $info['Name'] .
+            ') at <strong>' . $info['Map'] . '</strong> with ' . $info['Players'] . '/' . $info['MaxPlayers'] .
             ' players' . ($info['Bots'] > 0 ? (' (' . $info['Bots'] . ' bots)') : '') .
             (
                 $info['Players'] > 0 ? (
