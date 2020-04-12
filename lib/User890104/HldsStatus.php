@@ -56,11 +56,11 @@ class HldsStatus {
 	}
 	
 	public static function getStatus($host, $port = 27015) {
-	    $client = new RconClient($host, '', $port);
+        try {
+    	    $client = new QueryClient($host, $port, 1, 1);
 
-		try {
-			$info = $client->getInfo();
-			$players = $client->getPlayers();
+			$info = $client->info();
+			$players = $client->players();
 		}
 		catch (Exception $e) {
 			return '[' . $host . ':' . $port . '] ' . $e->getMessage();

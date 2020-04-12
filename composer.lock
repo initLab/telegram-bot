@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "23c01753513b1bcb4babd7dddab26016",
+    "content-hash": "20449c2891895086c494af53494061c3",
     "packages": [
         {
             "name": "guzzlehttp/guzzle",
@@ -834,20 +834,21 @@
         },
         {
             "name": "user890104/rcon-client",
-            "version": "v0.1.1",
+            "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "https://github.com/user890104/rcon-client.git",
-                "reference": "b82035b900dff3e70a313d4b71bab8135f7df62c"
+                "url": "https://gitlab.com/user890104/rcon-client.git",
+                "reference": "b87d731fa2d4ca10c7e136799df1f3aab875b95b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/user890104/rcon-client/zipball/b82035b900dff3e70a313d4b71bab8135f7df62c",
-                "reference": "b82035b900dff3e70a313d4b71bab8135f7df62c",
+                "url": "https://gitlab.com/api/v4/projects/user890104%2Frcon-client/repository/archive.zip?sha=b87d731fa2d4ca10c7e136799df1f3aab875b95b",
+                "reference": "b87d731fa2d4ca10c7e136799df1f3aab875b95b",
                 "shasum": ""
             },
             "require": {
-                "php-64bit": ">=5.6.0"
+                "ext-bz2": "*",
+                "php-64bit": "^7.2.0"
             },
             "type": "library",
             "autoload": {
@@ -866,13 +867,15 @@
                 }
             ],
             "description": "GoldSrc RCON client written in PHP",
-            "time": "2016-09-15T11:17:36+00:00"
+            "time": "2020-04-12T19:43:20+00:00"
         }
     ],
     "packages-dev": [],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "user890104/rcon-client": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
