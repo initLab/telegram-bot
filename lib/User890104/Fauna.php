@@ -28,8 +28,7 @@ class Fauna extends AbstractProvider {
 		return [
 		    'public',
 		    'account_data_read',
-		    'door_handle_control',
-		    'door_latch_control',
+		    'door_control',
         ];
 	}
 	
