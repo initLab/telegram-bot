@@ -35,10 +35,10 @@ class FaunaCommand extends UserCommand
     protected $usage = '/fauna';
     protected $version = '1.0.0';
     protected $enabled = true;
-	
+
 	private static $provider = null;
 	private static $token = null;
-	
+
 	private static function getProvider(array $config)
 	{
 		if (is_null(static::$provider)) {
@@ -48,10 +48,10 @@ class FaunaCommand extends UserCommand
 				'redirectUri'  => BOT_BASE_URL . '/oauth.php',
 			]);
 		}
-		
+
 		return static::$provider;
 	}
-	
+
 	private static function getFilename(User $sender, $type = 'access_token') {
 	    $dir = __DIR__ . '/../storage/fauna';
 
@@ -61,19 +61,19 @@ class FaunaCommand extends UserCommand
 
 		return $dir . '/' . $sender->getId() . '_' . $type . '.txt';
 	}
-	
+
 	private static function deleteParam(User $sender, $type = 'access_token') {
 		$filename = static::getFilename($sender, $type);
-		
+
 		if (file_exists($filename)) {
 			unlink($filename);
 		}
 	}
-	
+
 	private static function setParam(User $sender, $data, $type = 'access_token') {
 		file_put_contents(static::getFilename($sender, $type), $data);
 	}
-	
+
 	private static function getUrl($url) {
 		$ch = curl_init();
 		curl_setopt_array($ch, [
@@ -89,12 +89,12 @@ class FaunaCommand extends UserCommand
 		curl_close($ch);
 		return $result;
 	}
-	
+
 	private static function getJson($url) {
 		if (substr($url, 0, 4) !== 'http' && !is_readable($url)) {
 			throw new Exception('Unable to open file');
 		}
-		
+
 		try {
 			$data = static::getUrl($url);
 		}
@@ -102,137 +102,102 @@ class FaunaCommand extends UserCommand
 			if ($e->getCode() !== 3) {
 				throw $e;
 			}
-			
+
 			$data = file_get_contents($url);
-			
+
 			if ($data === false) {
 				throw new Exception('Unable to read file');
 			}
 		}
-		
+
 		$data = json_decode($data, true);
-		
+
 		if ($data === false) {
 			throw new Exception('Error decoding data');
 		}
-		
+
 		return $data;
 	}
-	
-	private static function buildCbData(array $data)
+
+	private static function buildCbData(array $data = [])
 	{
 		return http_build_query(array_merge([
 			'cmd' => 'fauna',
 		], $data));
 	}
-	
-	private static function getStatusMessage()
+
+	private static function getStatusMessage(User $sender, $config)
 	{
-		$result = static::getJson('https://fauna.initlab.org/api/door/status.json');
-		$status = $result['latch'];
-		
+        $auth = static::checkAuth($sender, $config);
+
+        if ($auth !== true) {
+            return $auth;
+        }
+
+        $provider = static::getProvider($config);
+
+        $request = $provider->getAuthenticatedRequest(
+            Fauna::METHOD_GET,
+            'https://fauna.initlab.org/api/doors.json',
+            static::$token);
+
+        try {
+            $doors = $provider->getResponse($request);
+        }
+        catch (Exception $e) {
+            return [
+                'text' => 'Action failed: ' . $e->getMessage(),
+            ];
+        }
+
+        $doors = json_decode($doors->getBody()->getContents(), true, 512, JSON_THROW_ON_ERROR);
+
 		$icons = [
 			'locked' => '🔒',
 			'unlocked' => '🔓',
 			'unknown' => '❓',
 			'open' => '🚪',
-			'refresh' => '🔄',
 		];
-		
-		$markup = [
-			'locked' => [
-				[
-					new InlineKeyboardButton([
-						'text' => $icons['unlocked'] . ' Unlock',
-						'callback_data' => static::buildCbData([
-							'action' => 'unlock',
-						]),
-					]),
-					new InlineKeyboardButton([
-						'text' => $icons['refresh'] . ' Refresh',
-						'callback_data' => static::buildCbData([
-							'action' => 'refresh',
-						]),
-					]),
-				],
-				[
-					new InlineKeyboardButton([
-						'text' => $icons['unlocked'] . ' ' . $icons['open'] . ' Unlock and open',
-						'callback_data' => static::buildCbData([
-							'action' => 'unlock;open',
-						]),
-					]),
-				],
-			],
-			'unlocked' => [
-				[
-					new InlineKeyboardButton([
-						'text' => $icons['locked'] . ' Lock',
-						'callback_data' => static::buildCbData([
-							'action' => 'lock',
-						]),
-					]),
-					new InlineKeyboardButton([
-						'text' => $icons['refresh'] . ' Refresh',
-						'callback_data' => static::buildCbData([
-							'action' => 'refresh',
-						]),
-					]),
-				],
-				[
-					new InlineKeyboardButton([
-						'text' => $icons['open'] . ' Open',
-						'callback_data' => static::buildCbData([
-							'action' => 'open',
-						]),
-					]),
-				],
-			],
-			'unknown' => [
-				[
-					new InlineKeyboardButton([
-						'text' => $icons['open'] . ' Open',
-						'callback_data' => static::buildCbData([
-							'action' => 'open',
-						]),
-					]),
-					new InlineKeyboardButton([
-						'text' => $icons['refresh'] . ' Refresh',
-						'callback_data' => static::buildCbData([
-							'action' => 'refresh',
-						]),
-					]),
-				],
-				[
-					new InlineKeyboardButton([
-						'text' => $icons['locked'] . ' Lock',
-						'callback_data' => static::buildCbData([
-							'action' => 'lock',
-						]),
-					]),
-					new InlineKeyboardButton([
-						'text' => $icons['unlocked'] . ' Unlock',
-						'callback_data' => static::buildCbData([
-							'action' => 'unlock',
-						]),
-					]),
-				],
-				[
-					new InlineKeyboardButton([
-						'text' => $icons['unlocked'] . ' ' . $icons['open'] . ' Unlock and open',
-						'callback_data' => static::buildCbData([
-							'action' => 'unlock;open',
-						]),
-					]),
-				],
-			],
-		];
-		
+
+        $markup = [
+            'label' => static fn(string $text) => new InlineKeyboardButton([
+                'text' => $text,
+                'callback_data' => static::buildCbData(),
+            ]),
+            'lock' => static fn(string $doorId) => new InlineKeyboardButton([
+                'text' => $icons['locked'] . ' Lock',
+                'callback_data' => static::buildCbData([
+                    'action' => 'lock',
+                    'doorId' => $doorId,
+                ]),
+            ]),
+            'open' => static fn(string $doorId) => new InlineKeyboardButton([
+                'text' => $icons['open'] . ' Open',
+                'callback_data' => static::buildCbData([
+                    'action' => 'open',
+                    'doorId' => $doorId,
+                ]),
+            ]),
+            'unlock' => static fn(string $doorId) => new InlineKeyboardButton([
+                'text' => $icons['unlocked'] . ' Unlock',
+                'callback_data' => static::buildCbData([
+                    'action' => 'unlock',
+                    'doorId' => $doorId,
+                ]),
+            ]),
+        ];
+
+        $kb = new InlineKeyboard([
+            'inline_keyboard' => array_merge(...array_map(static fn(array $door) => [[
+                $markup['label']($door['name'])
+            ], array_map(static fn(string $action) =>
+                $markup[$action]($door['id']),
+            $door['supported_actions'])], $doors)),
+        ]);
+
 		return [
-			'text' => $icons[$status] . ' init Lab door is ' . ($status === 'unknown' ? 'in an unknown status' : $status),
-			'reply_markup' => new InlineKeyboard([
-				'inline_keyboard' => $markup[$status],
-			]),
+			'text' => 'Choose an action',
+			'reply_markup' => $kb,
 		];
 	}
 
@@ -240,7 +205,7 @@ class FaunaCommand extends UserCommand
     {
         return file_get_contents(static::getFilename($sender, 'state'));
     }
-	
+
 	private static function getAccessToken(User $sender, array $config) {
 		try {
 			$data = static::getJson(static::getFilename($sender));
@@ -249,9 +214,9 @@ class FaunaCommand extends UserCommand
 			static::deleteParam($sender);
 			throw new Exception('Unable to load access token');
 		}
-		
+
 		$accessToken = new AccessToken($data);
-		
+
 		if ($accessToken->hasExpired()) {
 			try {
 				$accessToken = static::getProvider($config)->getAccessToken('refresh_token', [
@@ -265,10 +230,10 @@ class FaunaCommand extends UserCommand
 				throw new Exception('Unable to refresh access token');;
 			}
 		}
-		
+
 		return $accessToken;
 	}
-	
+
 	private static function startAuth(User $sender, array $config) {
 		$provider = static::getProvider($config);
 		/** @var Fauna $provider */
@@ -276,12 +241,12 @@ class FaunaCommand extends UserCommand
         static::setParam($sender, $provider->getState(), 'state');
         return $url;
 	}
-	
+
 	private static function checkAuth(User $sender, array $config) {
 		if (!is_null(static::$token)) {
 			return true;
 		}
-		
+
 		try {
 			$token = static::getAccessToken($sender, $config);
 		}
@@ -300,55 +265,39 @@ class FaunaCommand extends UserCommand
 				]),
 			];
 		}
-		
+
 		static::$token = $token;
-		
+
 		return true;
 	}
-	
-	private static function executeCommand(User $sender, $action, array $config)
+
+	private static function executeCommand(User $sender, $action, $doorId, array $config)
 	{
-		$auth = static::checkAuth($sender, $config);
-		
-		if ($auth !== true) {
-			return $auth;
-		}
-		
-		$provider = static::getProvider($config);
-		/*
-		try {
-			$resourceOwner = $provider->getResourceOwner(static::$token);
-		}
-		catch (Exception $e) {
-			return [
-				'text' => 'Resource owner request failed: ' . $e->getMessage(),
-			];
-		}
-		*/
+        $auth = static::checkAuth($sender, $config);
+
+        if ($auth !== true) {
+            return $auth;
+        }
+
+        $provider = static::getProvider($config);
+
 		$request = $provider->getAuthenticatedRequest(
 			Fauna::METHOD_POST,
-			'https://fauna.initlab.org/api/door/actions',
-			static::$token, [
-				'body' => http_build_query([
-					'door_action' => [
-						'name' => $action,
-					],
-				]),
-			]
-		);
-		
+			sprintf('https://fauna.initlab.org/api/doors/%s/%s', $doorId, $action),
+			static::$token);
+
 		try {
-			$provider->getResponse($request);
+			$doors = $provider->getResponse($request);
 		}
 		catch (Exception $e) {
 			return [
 				'text' => 'Action failed: ' . $e->getMessage(),
 			];
 		}
-		
+
 		return true;
 	}
-	
+
 	public static function processStart(User $sender, Message $message, $data, array $config) {
 		$code = urlBase64Encode(substr($data, 0, 32));
 		$state = substr($data, 32);
@@ -357,7 +306,7 @@ class FaunaCommand extends UserCommand
 		if ($state !== $savedState) {
             throw new Exception('State does not match');
 		}
-		
+
 		static::deleteParam($sender, 'state');
 
 		try {
@@ -365,9 +314,9 @@ class FaunaCommand extends UserCommand
 			$accessToken = static::getProvider($config)->getAccessToken('authorization_code', [
 				'code' => $code,
 			]);
-			
+
 			static::setParam($sender, json_encode($accessToken));
-			
+
 			$text = 'Login successful!';
 		}
 		catch (IdentityProviderException $e) {
@@ -378,51 +327,53 @@ class FaunaCommand extends UserCommand
 			var_dump($e);
 			$text = 'Unclassified error: ' . $e->getMessage() . '. Please try again. /fauna';
 		}
-		
+
 		$chat_id = $message->getChat()->getId();
 		$reply_to_message_id = $chat_id < 0 ? $message->getMessageId() : null;
-		
+
 		return Request::sendMessage(compact('chat_id', 'text', 'reply_to_message_id'));
 	}
-	
+
 	public static function processCallback(User $sender, Message $message, array $data, array $config)
 	{
 		if (!array_key_exists('action', $data)) {
 			return [
-				'text' => 'Error processing request',
+				'text' => 'No action provided',
 			];
 		}
-		
-		$actions = explode(';', $data['action']);
-		
-		foreach ($actions as $action) {
-			if (!in_array($action, ['refresh', 'open', 'lock', 'unlock'])) {
-				return [
-					'text' => 'Invalid command ' . $action,
-				];
-			}
-		}
-		
-		$text = 'Action successful!';
-		
-		foreach ($actions as $action) {
-			if ($action === 'refresh') {
-				continue;
-			}
-			
-			$result = static::executeCommand($sender, $action, $config);
-			
-			if ($result !== true) {
-				$text = 'Command ' . $action . ' failed!';
-				Request::sendMessage(array_merge([
-					'chat_id' => $sender->getId(),
-				], $result));
-				break;
-			}
-		}
-		
-		$messageData = static::getStatusMessage();
-		
+
+        $action = $data['action'];
+
+        if (!in_array($action, ['open', 'lock', 'unlock'])) {
+            return [
+                'text' => 'Unknown command ' . $action,
+            ];
+        }
+
+        // action is open, lock or unlock
+        if (!array_key_exists('doorId', $data)) {
+            return [
+                'text' => 'No door ID provided',
+            ];
+        }
+
+        $doorId = $data['doorId'];
+        $result = static::executeCommand($sender, $action, $doorId, $config);
+
+        $text = 'Action successful!';
+
+        if ($result !== true) {
+            Request::sendMessage(array_merge([
+                'chat_id' => $sender->getId(),
+            ], $result));
+
+            $text = 'Command ' . $action . ' failed!';
+
+            return compact('text');
+        }
+
+		$messageData = static::getStatusMessage($sender, $config);
+
 		if ($message->getText() !== $messageData['text']) {
 			try {
 				Request::editMessageText(array_merge([
@@ -434,10 +385,10 @@ class FaunaCommand extends UserCommand
 				// fail silently if edit fails
 			}
 		}
-		
+
 		return compact('text');
 	}
-	
+
     public function execute()
     {
         $message = $this->getMessage();
@@ -447,16 +398,21 @@ class FaunaCommand extends UserCommand
 		$message_id = $message->getMessageId();
 		$reply_to_message_id = $chat_id < 0 ? $message_id : null;
 		$replyData = compact('chat_id', 'reply_to_message_id');
-		$action = trim($message->getText(true));
+		$text = trim($message->getText(true));
 		$config = $this->getConfig();
-		
-		if ($action === '') {
+
+		if ($text === '') {
 			// Current status
-			return Request::sendMessage(array_merge($replyData, static::getStatusMessage()));
+			return Request::sendMessage(array_merge($replyData, static::getStatusMessage($sender, $config)));
 		}
-		
+
+        [
+            $action,
+            $firstArgument,
+        ] = explode(' ', $text);
+
 		// Self deauth
-		
+
 		if ($action === 'deauth') {
 			static::deleteParam($sender, 'state');
 			static::deleteParam($sender);
@@ -464,27 +420,27 @@ class FaunaCommand extends UserCommand
 				'text' => 'Deauthentication successful',
 			]));
 		}
-		
+
 		if (!in_array($action, ['open', 'lock', 'unlock'])) {
 			return Request::sendMessage(array_merge($replyData, [
 				'text' => 'Invalid command',
 			]));
 		}
-		
+
 		$response = Request::sendMessage(array_merge($replyData, [
 			'parse_mode' => 'Markdown',
 			//'text' => 'Executing command *' . $text . '* on behalf of ' . $resourceOwner['name'] . ' (' . $resourceOwner['username'] . ')',
 			'text' => 'Executing command *' . $action . '*',
 		]));
-		
+
 		$replyData['reply_to_message_id'] = $chat_id < 0 ? $response->getResult()->getMessageId() : null;
-		
-		$result = static::executeCommand($sender, $action, $config);
-		
+
+		$result = static::executeCommand($sender, $action, $firstArgument, $config);
+
 		if ($result !== true) {
 			return Request::sendMessage(array_merge($replyData, $result));
 		}
-		
+
 		return Request::sendMessage(array_merge($replyData, [
 			'text' => 'Action successful',
 		]));
