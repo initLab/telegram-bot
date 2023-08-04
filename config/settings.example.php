@@ -24,7 +24,6 @@ define('GAMES_SERVERS', [[
 ]]);
 
 define('STATUS_DOOR_URL', 'https://example.com/door/status.json');
-define('STATUS_LIGHTS_URL', 'https://example.com/lights/status.json');
 define('STATUS_MQTT', [
 	'url' => 'http://example.com/status',
 	'timeout' => 20,

@@ -95,17 +95,6 @@ class StatusCommand extends UserCommand
 		return 'Door: ' . htmlspecialchars($data['latch']) . ' and ' . htmlspecialchars($data['door']);
 	}
 
-	private static function formatLightsStatus($url) {
-		try {
-			$data = static::getJson($url);
-		}
-		catch (Exception $e) {
-			return 'Lights status not available: ' . $e->getMessage();
-		}
-
-		return 'Lights: ' . htmlspecialchars($data['status']) . ', policy: ' . htmlspecialchars($data['policy']);
-	}
-
 	private static function formatUsers($url) {
 		try {
 			$data = static::getJson($url);
@@ -251,7 +240,6 @@ class StatusCommand extends UserCommand
 	private static function getStatus(array $config) {
 		return
 			static::formatDoorStatus($config['door_url']) . PHP_EOL .
-			//static::formatLightsStatus($config['lights_url']) . PHP_EOL .
 			static::formatMqttStatus($config['mqtt']) . PHP_EOL .
 			static::formatMusic($config['music_url']) . PHP_EOL .
 			static::formatUsers($config['users_url']);
