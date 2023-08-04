@@ -83,7 +83,7 @@ class StatusCommand extends UserCommand
 
 		return $data;
 	}
-
+/*
 	private static function formatDoorStatus($url) {
 		try {
 			$data = static::getJson($url);
@@ -94,7 +94,7 @@ class StatusCommand extends UserCommand
 
 		return 'Door: ' . htmlspecialchars($data['latch']) . ' and ' . htmlspecialchars($data['door']);
 	}
-
+*/
 	private static function formatUsers($url) {
 		try {
 			$data = static::getJson($url);
@@ -239,7 +239,7 @@ class StatusCommand extends UserCommand
 
 	private static function getStatus(array $config) {
 		return
-			static::formatDoorStatus($config['door_url']) . PHP_EOL .
+//			static::formatDoorStatus($config['door_url']) . PHP_EOL .
 			static::formatMqttStatus($config['mqtt']) . PHP_EOL .
 			static::formatMusic($config['music_url']) . PHP_EOL .
 			static::formatUsers($config['users_url']);
