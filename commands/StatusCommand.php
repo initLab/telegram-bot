@@ -47,7 +47,7 @@ class StatusCommand extends UserCommand
 		if (curl_setopt_array($ch, [
 			CURLOPT_RETURNTRANSFER => true,
 			CURLOPT_CONNECTTIMEOUT => 1,
-			CURLOPT_TIMEOUT => 2,
+			CURLOPT_TIMEOUT => 4,
 		]) === false) {
 			curl_close($ch);
 			throw new Exception('Unable to set download options');
