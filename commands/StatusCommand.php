@@ -28,6 +28,7 @@ class StatusCommand extends UserCommand
 	const UNITS = [
 		'temperature' => '°C',
 		'humidity' => '%',
+		'battery' => '%',
 		'pressure' => 'hPa',
 		'power' => 'W',
 		'energy' => 'kWh',
@@ -172,6 +173,7 @@ class StatusCommand extends UserCommand
                 $label = match ($unit) {
                     'temperature' => '🌡️',
                     'humidity' => '💧',
+                    'battery' => '🔋',
                     default => ucfirst($unit),
                 };
 
