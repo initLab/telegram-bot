@@ -167,10 +167,15 @@ class StatusCommand extends UserCommand
 				}
 
 				$currValue = $data[$key];
-				$label = ucfirst($unit);
 				$delta = max(0, microtime(true) - $currValue['timestamp'] / 1000);
 
-				$message = $label . ': ' . static::formatNum(floatval($currValue['value']), 1) . $unitSymbol;
+                $label = match ($unit) {
+                    'temperature' => '🌡️',
+                    'humidity' => '💧',
+                    default => ucfirst($unit),
+                };
+
+				$message = $label . ' ' . static::formatNum(floatval($currValue['value']), 1) . $unitSymbol;
 
 				if ($delta > $config['timeout']) {
 					$message .= ' (' . static::formatNum($delta) . 's ago)';
@@ -183,7 +188,7 @@ class StatusCommand extends UserCommand
 				continue;
 			}
 
-			$result[] = $sensorData['name'] . ': ' . implode(' / ', $values);
+			$result[] = $sensorData['name'] . ': ' . implode(' ', $values);
 		}
 
 		return implode(PHP_EOL, $result);
@@ -239,9 +244,9 @@ class StatusCommand extends UserCommand
 
 	private static function getStatus(array $config) {
 		return
-//			static::formatDoorStatus($config['door_url']) . PHP_EOL .
-			static::formatMqttStatus($config['mqtt']) . PHP_EOL .
-			static::formatMusic($config['music_url']) . PHP_EOL .
+//			static::formatDoorStatus($config['door_url']) . PHP_EOL . PHP_EOL .
+			static::formatMqttStatus($config['mqtt']) . PHP_EOL . PHP_EOL .
+			static::formatMusic($config['music_url']) . PHP_EOL . PHP_EOL .
 			static::formatUsers($config['users_url']);
 	}
 
