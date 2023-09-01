@@ -138,7 +138,7 @@ class FaunaCommand extends UserCommand
 
         $request = $provider->getAuthenticatedRequest(
             Fauna::METHOD_GET,
-            'https://fauna.initlab.org/api/doors.json',
+            'https://portier.initlab.org/api/doors',
             static::$token);
 
         try {
@@ -283,7 +283,7 @@ class FaunaCommand extends UserCommand
 
 		$request = $provider->getAuthenticatedRequest(
 			Fauna::METHOD_POST,
-			sprintf('https://fauna.initlab.org/api/doors/%s/%s', $doorId, $action),
+			sprintf('https://portier.initlab.org/api/doors/%s/%s', $doorId, $action),
 			static::$token);
 
 		try {
