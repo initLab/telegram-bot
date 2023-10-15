@@ -152,46 +152,20 @@ class FaunaCommand extends UserCommand
 
         $doors = json_decode($doors->getBody()->getContents(), true, 512, JSON_THROW_ON_ERROR);
 
-		$icons = [
-			'locked' => '🔒',
-			'unlocked' => '🔓',
-			'unknown' => '❓',
-			'open' => '🚪',
-		];
-
-        $markup = [
-            'label' => static fn(string $text) => new InlineKeyboardButton([
-                'text' => $text,
-                'callback_data' => static::buildCbData(),
-            ]),
-            'lock' => static fn(string $doorId) => new InlineKeyboardButton([
-                'text' => $icons['locked'] . ' Lock',
-                'callback_data' => static::buildCbData([
-                    'action' => 'lock',
-                    'doorId' => $doorId,
-                ]),
-            ]),
-            'open' => static fn(string $doorId) => new InlineKeyboardButton([
-                'text' => $icons['open'] . ' Open',
-                'callback_data' => static::buildCbData([
-                    'action' => 'open',
-                    'doorId' => $doorId,
-                ]),
-            ]),
-            'unlock' => static fn(string $doorId) => new InlineKeyboardButton([
-                'text' => $icons['unlocked'] . ' Unlock',
-                'callback_data' => static::buildCbData([
-                    'action' => 'unlock',
-                    'doorId' => $doorId,
-                ]),
-            ]),
-        ];
-
         $kb = new InlineKeyboard([
             'inline_keyboard' => array_merge(...array_map(static fn(array $door) => [[
-                $markup['label']($door['name'])
+                new InlineKeyboardButton([
+                    'text' => $door['name'],
+                    'callback_data' => static::buildCbData(),
+                ]),
             ], array_map(static fn(string $action) =>
-                $markup[$action]($door['id']),
+                new InlineKeyboardButton([
+                    'text' => static::getLabel($action),
+                    'callback_data' => static::buildCbData([
+                        'action' => $action,
+                        'doorId' => $door['id'],
+                    ]),
+                ]),
             $door['supported_actions'])], $doors)),
         ]);
 
@@ -200,6 +174,24 @@ class FaunaCommand extends UserCommand
 			'reply_markup' => $kb,
 		];
 	}
+
+    private static function getLabel(string $action) {
+        $icons = [
+            'lock' => '🔒',
+            'unlock' => '🔓',
+            'open' => '🚪',
+        ];
+
+        $separators = " \t\r\n\f\v-_";
+        $description = ucwords($action, $separators);
+        $baseAction = explode($separators, $action)[0];
+
+        if (!array_key_exists($baseAction, $icons)) {
+            return $description;
+        }
+
+        return $icons[$baseAction] . ' ' . $description;
+    }
 
 	private static function getState(User $sender)
     {
@@ -344,13 +336,12 @@ class FaunaCommand extends UserCommand
 
         $action = $data['action'];
 
-        if (!in_array($action, ['open', 'lock', 'unlock'])) {
+        if (!ctype_alnum(str_replace(['-', '_'], '', $action))) {
             return [
                 'text' => 'Unknown command ' . $action,
             ];
         }
 
-        // action is open, lock or unlock
         if (!array_key_exists('doorId', $data)) {
             return [
                 'text' => 'No door ID provided',
@@ -408,7 +399,7 @@ class FaunaCommand extends UserCommand
 
         [
             $action,
-            $firstArgument,
+            $doorId,
         ] = explode(' ', $text);
 
 		// Self deauth
@@ -421,7 +412,7 @@ class FaunaCommand extends UserCommand
 			]));
 		}
 
-		if (!in_array($action, ['open', 'lock', 'unlock'])) {
+		if (!ctype_alnum(str_replace(['-', '_'], '', $action))) {
 			return Request::sendMessage(array_merge($replyData, [
 				'text' => 'Invalid command',
 			]));
@@ -435,7 +426,7 @@ class FaunaCommand extends UserCommand
 
 		$replyData['reply_to_message_id'] = $chat_id < 0 ? $response->getResult()->getMessageId() : null;
 
-		$result = static::executeCommand($sender, $action, $firstArgument, $config);
+		$result = static::executeCommand($sender, $action, $doorId, $config);
 
 		if ($result !== true) {
 			return Request::sendMessage(array_merge($replyData, $result));

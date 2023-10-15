@@ -5,6 +5,7 @@
         "nesbot/carbon": "^2.0.0",
         "monolog/monolog": "^1.24",
         "ext-json": "*",
+        "ext-ctype": "*",
         "ext-curl": "*",
         "user890104/rcon-client": "dev-master"
     },
