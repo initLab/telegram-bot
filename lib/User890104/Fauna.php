@@ -27,7 +27,6 @@ class Fauna extends AbstractProvider {
 	protected function getDefaultScopes() {
 		return [
 		    'account_data_read',
-		    'door_control',
         ];
 	}
 
