@@ -119,7 +119,7 @@ class StatusCommand extends UserCommand
 				continue;
 			}
 
-			$result .= htmlspecialchars($user['name']) . ' (' . htmlspecialchars($user['username']) . ')';
+			$result .= htmlspecialchars($user['username']);
 
 			if (!empty($user['twitter'])) {
 				$result .= ' <a href="https://twitter.com/' . rawurlencode($user['twitter']) . '">[Twitter]</a>';
